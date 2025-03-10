@@ -10,12 +10,22 @@ class Tree:
         self.children.append(child)
 
     def prune(self):
-        """Removes all leaf nodes (nodes with no children)."""
-        # First, recursively prune all children.
-        for child in self.children[:]:
-            child.prune()
-        # Then, remove any child that is a leaf (has an empty children list).
-        self.children = [c for c in self.children if c.children]
+        """
+        Removes all nodes that were originally leaves.
+        
+        For each node, we look at its original children list (before any pruning)
+        and remove those children that have no children. Nodes that were not leaves
+        originally are pruned recursively but kept even if they end up with an empty
+        children list.
+        """
+        original_children = list(self.children)
+        new_children = []
+        for child in original_children:
+            # If the child had children originally, prune it recursively and keep it.
+            if len(child.children) > 0:
+                child.prune()
+                new_children.append(child)
+        self.children = new_children
 
     def all_nodes(self):
         """Returns all nodes in depth-first order."""
@@ -52,8 +62,6 @@ def treemap(func, tree):
 class DTree:
     """Represents a decision tree for outcome determination."""
     def __init__(self, variable, threshold, lessequal, greater, outcome):
-        # Internal node: outcome must be None and all other parameters non-None.
-        # Leaf node: outcome is not None and the rest are None.
         valid_combination = (
             (outcome is None and
              variable is not None and
@@ -92,7 +100,6 @@ class DTree:
         """Determines the outcome based on the observations tuple."""
         current = self
         while current.outcome is None:
-            # Access the observation corresponding to the variable index.
             value = observations[current.variable]
             current = current.lessequal if value <= current.threshold else current.greater
         return current.outcome
