@@ -1,22 +1,22 @@
 class Tree:
-    """Represents a hierarchical tree structure"""
+    """Represents a hierarchical tree structure."""
     def __init__(self, name, value):
         self.name = name
         self.value = value
         self.children = []
 
     def add_child(self, child):
-        """Adds a child node"""
+        """Adds a child node."""
         self.children.append(child)
 
     def prune(self):
-        """Removes all childless nodes"""
-        for child in self.children[:]:
+        """Removes all leaf nodes (nodes with no children)."""
+        for child in self.children[:]:  
             child.prune()
         self.children = [c for c in self.children if c.children]
 
     def all_nodes(self):
-        """Returns all nodes in depth-first order"""
+        """Returns all nodes in depth-first order."""
         nodes = [self]
         for child in self.children:
             nodes.extend(child.all_nodes())
@@ -24,30 +24,31 @@ class Tree:
 
 
 def dict_filter(func, d):
-    """Filters dictionary using key-value predicate"""
+    """Filters a dictionary using a key-value predicate."""
     return {k: v for k, v in d.items() if func(k, v)}
 
 
 class KVTree:
-    """Key-Value tree structure"""
+    """Represents a key-value tree structure."""
     def __init__(self, key, value):
         self.key = key
         self.value = value
         self.children = []
 
     def add_child(self, child):
-        """Adds child node"""
+        """Adds a child node."""
         self.children.append(child)
 
+
 def treemap(func, tree):
-    """Applies function to all nodes"""
+    """Applies a function to transform all tree nodes."""
     tree.key, tree.value = func(tree.key, tree.value)
     for child in tree.children:
         treemap(func, child)
 
 
 class DTree:
-    """Decision tree for outcome determination"""
+    """Represents a decision tree for outcome determination."""
     def __init__(self, variable, threshold, lessequal, greater, outcome):
         valid_combination = (
             (outcome is None and
@@ -62,44 +63,44 @@ class DTree:
              greater is None)
         )
         if not valid_combination:
-            raise ValueError("Invalid parameter combination")
-
+            self.new_method()
         self.variable = variable
         self.threshold = threshold
         self.lessequal = lessequal
         self.greater = greater
         self.outcome = outcome
 
+    def new_method(self):
+        raise ValueError("Invalid parameter combination")
+
     def tuple_atleast(self):
-        """Minimum required tuple size"""
+        """Determines the minimum required tuple size."""
         variables = set()
-        
-        def _traverse(node):
+        def helper(node):
             if node.outcome is None:
                 variables.add(node.variable)
-                _traverse(node.lessequal)
-                _traverse(node.greater)
-        
-        _traverse(self)
+                helper(node.lessequal)
+                helper(node.greater)
+        helper(self)
         return max(variables) + 1 if variables else 0
 
     def find_outcome(self, observations):
-        """Determine outcome from observations"""
+        """Determines the outcome based on observations."""
         current = self
         while current.outcome is None:
-            obs = observations[current.variable]
-            current = (current.lessequal if obs <= current.threshold
-                       else current.greater)
+            value = observations[current.variable]
+            current = current.lessequal if value <= current.threshold else current.greater
         return current.outcome
 
     def no_repeats(self):
-        """Check for repeated variable checks"""
-        def _check(node, seen):
+        """Checks for repeated variable checks in any path."""
+        def helper(node, seen_vars):
             if node.outcome is not None:
                 return True
-            if node.variable in seen:
+            if node.variable in seen_vars:
                 return False
-            return (_check(node.lessequal, seen | {node.variable}) and
-                    _check(node.greater, seen | {node.variable}))
-        
-        return _check(self, set())
+            return (
+                helper(node.lessequal, seen_vars | {node.variable}) and
+                helper(node.greater, seen_vars | {node.variable})
+            )
+        return helper(self, set())
