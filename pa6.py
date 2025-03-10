@@ -11,8 +11,10 @@ class Tree:
 
     def prune(self):
         """Removes all leaf nodes (nodes with no children)."""
-        for child in self.children[:]:  
+        # First, recursively prune all children.
+        for child in self.children[:]:
             child.prune()
+        # Then, remove any child that is a leaf (has an empty children list).
         self.children = [c for c in self.children if c.children]
 
     def all_nodes(self):
@@ -50,6 +52,8 @@ def treemap(func, tree):
 class DTree:
     """Represents a decision tree for outcome determination."""
     def __init__(self, variable, threshold, lessequal, greater, outcome):
+        # Internal node: outcome must be None and all other parameters non-None.
+        # Leaf node: outcome is not None and the rest are None.
         valid_combination = (
             (outcome is None and
              variable is not None and
@@ -74,7 +78,7 @@ class DTree:
         raise ValueError("Invalid parameter combination")
 
     def tuple_atleast(self):
-        """Determines the minimum required tuple size."""
+        """Determines the minimum required tuple size based on the maximum variable index checked."""
         variables = set()
         def helper(node):
             if node.outcome is None:
@@ -85,22 +89,21 @@ class DTree:
         return max(variables) + 1 if variables else 0
 
     def find_outcome(self, observations):
-        """Determines the outcome based on observations."""
+        """Determines the outcome based on the observations tuple."""
         current = self
         while current.outcome is None:
+            # Access the observation corresponding to the variable index.
             value = observations[current.variable]
             current = current.lessequal if value <= current.threshold else current.greater
         return current.outcome
 
     def no_repeats(self):
-        """Checks for repeated variable checks in any path."""
+        """Checks for repeated variable checks along any branch in the tree."""
         def helper(node, seen_vars):
             if node.outcome is not None:
                 return True
             if node.variable in seen_vars:
                 return False
-            return (
-                helper(node.lessequal, seen_vars | {node.variable}) and
-                helper(node.greater, seen_vars | {node.variable})
-            )
+            new_seen = seen_vars | {node.variable}
+            return helper(node.lessequal, new_seen) and helper(node.greater, new_seen)
         return helper(self, set())
